@@ -4,5 +4,6 @@
     <string name="app_name">SnFChat</string>
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
+    <string name="button_send">Send</string>
 
 </resources>
