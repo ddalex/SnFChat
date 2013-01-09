@@ -1,6 +1,8 @@
 package ro.ddalex.snfchat;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.os.Bundle;
 import android.app.Activity;
@@ -19,6 +21,8 @@ public class MainActivity extends Activity {
 	
 	private NetTalkerService service;
 	
+	//private  MainActivity getMAThis() { return this; }
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -26,7 +30,31 @@ public class MainActivity extends Activity {
 		
 		Intent i = new Intent(this, NetTalkerService.class);
 		startService(i);
+	
+		// get a timer to get the service and then pull updates
+		final Timer t = new Timer();
+		t.schedule(
+		new TimerTask() {
+			@Override
+			public void run() {
+				while ((service = NetTalkerService.getInstance()) == null)
+				{
+					try {
+						Thread.sleep(10);
+					} catch (InterruptedException e) {
+					}
+				}
 				
+				while (! service.getMessageQueue().isEmpty() )
+				{
+					String s = service.getMessageQueue().poll();
+					if (s != null)
+						displayNetMessage(s);
+				}
+			}
+		}, 10, 10);
+		
+		
 		ListView listView =  (ListView)findViewById(R.id.list);
 	    adapter=new ArrayAdapter<String>(this,
 	               android.R.layout.simple_list_item_1,
@@ -37,6 +65,7 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onPause()
 	{
+		super.onPause();		
 		Intent i = new Intent(this, NetTalkerService.class);
 		stopService(i);		
 	}
@@ -55,17 +84,9 @@ public class MainActivity extends Activity {
 	}
 	
 	public void sendNetMessage(View view)
-	{
-		
-		// busy wait here
-		while ((service = NetTalkerService.getInstance()) == null)
-		{
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-			}
-		}
-		service.setActivity(this);
+	{		
+		if (service == null)
+			return;
 		
 		EditText mEdit = (EditText) findViewById(R.id.editText1);
 		String text = mEdit.getText().toString();
